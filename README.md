@@ -3,9 +3,8 @@
 
 Code for the ECCV 2020 paper entitled 'Entropy Minimisation Framework for Event-based Vision Model Estimation'.
 The authors provide this code in the hope it will be useful for understanding the proposed method, as well as for reproducibility of the results.
-CONFIDENTIAL COPY. DO NOT DISTRIBUTE.
 
-For more information and more open-source software please visit the Personal Robotic Lab's website: <https://www.imperial.ac.uk/personal-robotics/software/>.
+For more information and more open-source software please visit the Personal Robotic Lab's website: <https://www.imperial.ac.uk/personal-robotics/>.
 
 # Requirements
 This code was tested on Ubuntu 16.04 and 18.04 distros.
