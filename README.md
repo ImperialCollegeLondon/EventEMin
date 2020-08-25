@@ -1,7 +1,7 @@
 # EventEMin
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg?style=flat-square)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 
-Code for the ECCV 2020 paper entitled 'Entropy Minimisation Framework for Event-based Vision Model Estimation'.
+Code for the ECCV 2020 paper entitled [Entropy Minimisation Framework for Event-based Vision Model Estimation](http://www.ecva.net/papers/eccv_2020/papers_ECCV/papers/123500154.pdf).
 The authors provide this code in the hope it will be useful for understanding the proposed method, as well as for reproducibility of the results.
 
 For more information and more open-source software please visit the Personal Robotic Lab's website: <https://www.imperial.ac.uk/personal-robotics/>.
