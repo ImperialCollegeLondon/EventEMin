@@ -33,5 +33,6 @@
 
 bin
 build
+data
 lib
 *~
