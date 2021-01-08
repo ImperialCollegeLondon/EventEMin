@@ -2,7 +2,7 @@ clear, clc, close all;
 
 %% read ground-truth vars
 disp('please select the file containing the ground-truth (it should be the imu.txt file)');
-[file, folder]=uigetfile;
+[file, folder]=uigetfile({'*.txt';'*.*'}, 'File Selector');
 fimu=fullfile(folder, file);
 
 fid=fopen(fimu, 'r');
@@ -12,7 +12,7 @@ Aw=[Aimu(:, 1) rad2deg(Aimu(:, 5)) rad2deg(Aimu(:, 6)) rad2deg(Aimu(:, 7))];
 
 %% read estimated vars
 disp('please select the file containing the estimates');
-[file, folder]=uigetfile;
+[file, folder]=uigetfile({'*.txt';'*.*'}, 'File Selector');
 festimates=fullfile(folder, file);
 
 fid=fopen(festimates, 'r');
@@ -24,19 +24,14 @@ Aw=Aw(Aw(:, 1)<=maxT, :);
 Bw=Bw(Bw(:, 1)<=maxT, :);
 
 %% error computation
-nparams=3;
-Awi=zeros(size(Bw, 1), nparams);
-for p=1:nparams
-    pp=p+1;
-    Awi(:, p)=interp1(Aw(:, 1), Aw(:, pp), Bw(:, 1), 'spline');
-end
-
+Awi=interp1(Aw(:, 1), Aw(:, 2:4), Bw(:, 1), 'spline');
 er=Awi-Bw(:, 2:4);
 
 % error statistics
-fprintf('\nmean (ex, ey, ez): %f %f %f %f\n', mean(abs(er)));
+fprintf('\nmean (ex, ey, ez): %f %f %f\n', mean(abs(er)));
 fprintf('mean (ew): %f\n', mean(mean(abs(er))));
 fprintf('std (ex, ey, ez): %f %f %f\n', std(er));
 fprintf('std (ew): %f\n', mean(std(er)));
 fprintf('rms (ex, ey, ez): %f %f %f\n', rms(er));
-fprintf('rms (ew, percentage): %f %f\n', mean(rms(er)), 100*mean(rms(er))/max(abs(Aw(:, 2:4)), [], 'all'));
+fprintf('rms (ew, percentage): %f %f\n', mean(rms(er)), ...
+    100*mean(rms(er))/max(abs(Aw(:, 2:4)), [], 'all'));

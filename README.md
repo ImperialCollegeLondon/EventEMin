@@ -13,13 +13,13 @@ This code was tested on Ubuntu 16.04 and 18.04 distros.
 CMake: <https://cmake.org/download/>
 
 	$ sudo apt install cmake cmake-curses-gui
-	
+
 OpenCV: <https://docs.opencv.org/trunk/d7/d9f/tutorial_linux_install.html>
 
 Eigen3: <http://eigen.tuxfamily.org/index.php?title=Main_Page#Download>
 
 	$ sudo apt install libeigen3-dev
-	
+
 GSL - GNU: <https://www.gnu.org/software/gsl/>
 
 	$ git clone https://github.com/ampl/gsl.git
@@ -39,7 +39,7 @@ OpenMP (optional): <https://www.openmp.org/>
 	$ mkdir build && cd build
 	$ cmake .. && make
 
-Please ensure all environment path variables are well set. 
+Please ensure all environment path variables are well set.
 
 ## Datasets
 Two datasets were used in the experiments: <http://rpg.ifi.uzh.ch/davis_data.html> and <https://daniilidis-group.github.io/mvsec/>.
@@ -58,7 +58,7 @@ Also, the status of the optimisation procedure should be displayed in the follow
 	- iteration, restart iteration: score, gradient magnitude
 	- gradient
 	- parameters
-	
+
 In the end, the estimated parameters are also displayed.
 
 #### Optical Flow Estimation
@@ -89,6 +89,39 @@ To run examples, on a terminal type:
 
 	$ ./example_entropy_6dof
 	$ ./example_approx_entropy_6dof
+
+### Test Sequences
+To run the sequences tests, you need to download at least one sequence of the dataset provided in <http://rpg.ifi.uzh.ch/davis_data.html> and then on a terminal type:
+
+        $ ./example_test_sequence_distorted <path-to-events-dir> <batch-size> <path-to-estimates-saving-dir> <estimates-file-name>
+
+- path-to-events-dir:
+Path to the events' directory, following the format proposed in <http://rpg.ifi.uzh.ch/davis_data.html> (e.g. `/poster_rotation`).
+The events' directory must contain two files, namely, events.txt (list of events) and calib.txt (camera parameters).
+Please check the folders under [dataset](./dataset) for examples.
+- batch-size:
+Number of events of each batch (e.g. `20000`).
+- path-to-estimates-saving-dir:
+Path to where the estimates are to be stored (e.g. `/poster_rotation_estimates`)
+- estimates-file-name:
+Estimates file name (e.g. `approx_tsallis_2`).
+
+For example, if you downloaded the `poster_rotation` sequence and stored it under `foo` directory, by running
+
+        $ ./example_test_sequence_distorted /foo/poster_rotation 20000 /foo/poster_rotation/estimates approx_tsallis_2
+
+a file containig the estimates using the *Approx. Tsallis* function should be created under `/foo/poster_rotation/estimates` directory (`/estimates` directory should be created before running the test).
+
+To compute the errors, by running the MATLAB script [sequence_error.m](./dataset/poster_rotation/sequence_error.m), you should get the following in deg/s (approximately), using the *Approx. Tsallis* function:
+
+| Sequence         | mean  | std   | RMS   |
+| ---------------- | ----- | ----- | ----- |
+| boxes_rotation   | 8.24  | 10.74 | 10.85 |
+| dynamic_rotation | 8.07  | 11.37 | 11.48 |
+| poster_rotation  | 11.19 | 14.82 | 14.91 |
+
+We provide these results as a reference to check whether the code is running as intended.
+If you have troubles reproducing these results, please do not hesitate and let me know.
 
 ## License
 The EventEMin code is licensed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/). Commercial usage is not permitted.
