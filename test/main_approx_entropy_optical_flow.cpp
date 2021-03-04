@@ -14,7 +14,7 @@ int
 main(void)
 {
   typedef float T;
-  
+
   // model
   typedef model::OpticalFlow<T> Model;
 

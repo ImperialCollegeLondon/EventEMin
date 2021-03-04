@@ -9,6 +9,7 @@
 #include "model/rotation.h"
 #include "model/similarity.h"
 #include "model/translation.h"
+#include "model/translation_normal.h"
 
 // in 3D space
 #include "model/six_dof.h"
