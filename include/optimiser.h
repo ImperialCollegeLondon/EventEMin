@@ -3,4 +3,4 @@
 
 #include "optimiser/gsl_fdf_optimiser.h"
 
-#endif // OPTIMISER_ALL_H
+#endif  // OPTIMISER_ALL_H

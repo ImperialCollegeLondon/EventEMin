@@ -3,282 +3,200 @@
 
 #include <cassert>
 #include <cmath>
-#include <Eigen/Core>
-#include <unsupported/Eigen/CXX11/Tensor>
 
 #include "types_def.h"
 
+namespace event_model
+{
 namespace kernel
 {
-
-template<typename T>
+template <typename T>
 T
-gauss(
-  const T& x)
+gauss(const T& x)
 {
-  const T val=x*x;
-  return std::exp(-T(0.5)*val);
+  const T val = x * x;
+  return std::exp(-T(0.5) * val);
 }
-template<typename T>
+template <typename T>
 T
-gauss(
-  const T& x,
-  const T& sigmaInv)
+gauss(const T& x, const T& sigmaInv)
 {
-  const T val=x*sigmaInv*x;
-  return std::exp(-T(0.5)*val);
+  const T val = x * sigmaInv * x;
+  return std::exp(-T(0.5) * val);
 }
-template<typename T, int N>
+template <typename T, int N>
 T
-gauss(
-  const Eigen::Ref<const vec<T, N> >& x)
+gauss(const Ref<const Vector<T, N> >& x)
 {
-  const T val=x.transpose()*x;
-  return std::exp(-T(0.5)*val);
+  const T val = x.transpose() * x;
+  return std::exp(-T(0.5) * val);
 }
-template<typename T, int N>
+template <typename T, int N>
 T
-gauss(
-  const Eigen::Ref<const vec<T, N> >& x,
-  const Eigen::Ref<const vec<T, N> >& sigmaInv)
+gauss(const Ref<const Vector<T, N> >& x,
+      const Ref<const Vector<T, N> >& sigmaInv)
 {
-  const T val=x.transpose()*(sigmaInv.asDiagonal()*x);
-  return std::exp(-T(0.5)*val);
+  const T val = x.transpose() * (sigmaInv.asDiagonal() * x);
+  return std::exp(-T(0.5) * val);
 }
-template<typename T>
+template <typename T>
 T
-gauss(
-  const Eigen::Ref<const vec<T> >& x)
+gauss(const Ref<const Vector<T> >& x)
 {
-  const T val=x.transpose()*x;
-  return std::exp(-T(0.5)*val);
+  const T val = x.transpose() * x;
+  return std::exp(-T(0.5) * val);
 }
-template<typename T>
+template <typename T>
 T
-gauss(
-  const Eigen::Ref<const vec<T> >& x,
-  const Eigen::Ref<const vec<T> >& sigmaInv)
+gauss(const Ref<const Vector<T> >& x, const Ref<const Vector<T> >& sigmaInv)
 {
-  assert(x.size()==sigmaInv.size());
-  const T val=x.transpose()*(sigmaInv.asDiagonal()*x);
-  return std::exp(-T(0.5)*val);
+  assert(x.size() == sigmaInv.size());
+  const T val = x.transpose() * (sigmaInv.asDiagonal() * x);
+  return std::exp(-T(0.5) * val);
 }
 
-template<typename T>
-T
-dgauss(
-  const T& g,
-  const T& x)
-{
-  return -g*x;
-}
-template<typename T>
-T
-dgauss(
-  const T& g,
-  const T& x,
-  const T& sigmaInv)
-{
-  return -g*x*sigmaInv;
-}
-template<typename T, int N>
+template <typename T, int N>
 void
-dgauss(
-  const T& g,
-  const Eigen::Ref<const vec<T, N> >& x,
-  Eigen::Ref<vec<T, N> > dg)
+gaussKernelIterate(const int ksize, const int hksize, const int d, Vector<T>& p,
+                   Array<int, N>& ind, Tensor<T, N>& kernel)
 {
-  dg=-g*x;
-}
-template<typename T, int N>
-void
-dgauss(
-  const T& g,
-  const Eigen::Ref<const vec<T, N> >& x,
-  const Eigen::Ref<const vec<T, N> >& sigmaInv,
-  Eigen::Ref<vec<T, N> > dg)
-{
-  dg=-g*(x.transpose()*sigmaInv.asDiagonal()).transpose();
-}
-template<typename T>
-void
-dgauss(
-  const T& g,
-  const Eigen::Ref<const vec<T> >& x,
-  Eigen::Ref<vec<T> > dg)
-{
-  dg=-g*x;
-}
-template<typename T>
-void
-dgauss(
-  const T& g,
-  const Eigen::Ref<const vec<T> >& x,
-  const Eigen::Ref<const vec<T> >& sigmaInv,
-  Eigen::Ref<vec<T> > dg)
-{
-  assert(x.size()==sigmaInv.size());
-  dg=-g*(x.transpose()*sigmaInv.asDiagonal()).transpose();
-}
-
-template<typename T, int NDims>
-void
-gaussKernelIterate(
-  const int ksize, const int hksize,
-  const int d,
-  vec<T>& p,
-  array<int, NDims>& ind,
-  tensor<T, NDims>& kernel)
-{
-  if(d>=NDims)
+  if (d >= N)
   {
-    kernel(ind)=gauss<T>(p);
+    kernel(ind) = gauss<T>(p);
     return;
   }
 
-  for(ind.at(d)=0; ind.at(d)<ksize; ++ind.at(d))
+  for (ind.at(d) = 0; ind.at(d) < ksize; ++ind.at(d))
   {
-    p(d)=ind.at(d)-hksize;
-    gaussKernelIterate<T, NDims>(ksize, hksize, d+1, p, ind, kernel);
+    p(d) = ind.at(d) - hksize;
+    gaussKernelIterate<T, N>(ksize, hksize, d + 1, p, ind, kernel);
   }
 }
-template<typename T, int NDims>
+template <typename T, int N>
 void
-gaussKernel(
-  const int ksize,
-  tensor<T, NDims>& kernel)
+gaussKernel(const int ksize, Tensor<T, N>& kernel)
 {
-  array<int, NDims> sizeArray;
+  Array<int, N> sizeArray;
   sizeArray.fill(ksize);
   kernel.resize(sizeArray);
-  const int hksize=ksize>>1;
-  vec<T> p(NDims);
-  array<int, NDims> ind;
-  gaussKernelIterate<T, NDims>(ksize, hksize, 0, p, ind, kernel);
+  const int hksize = ksize >> 1;
+  Vector<T> p(N);
+  Array<int, N> ind;
+  gaussKernelIterate<T, N>(ksize, hksize, 0, p, ind, kernel);
   sizeArray.fill(hksize);
-  kernel=kernel/(kernel(sizeArray)*static_cast<T>(std::pow(2.0*M_PI, static_cast<T>(NDims)*0.5)));
+  kernel = kernel / (kernel(sizeArray) * std::pow(static_cast<T>(2.0 * M_PI),
+                                                  static_cast<T>(N * 0.5)));
 }
-template<typename T>
+template <typename T>
 void
-gaussKernel(
-  const int ksize,
-  vec<T>& kernel)
+gaussKernel(const int ksize, Vector<T>& kernel)
 {
   kernel.resize(ksize);
-  const int hksize=ksize>>1;
+  const int hksize = ksize >> 1;
   T p;
-  for(int i=0; i<ksize; ++i)
+  for (int i = 0; i < ksize; ++i)
   {
-    p=i-hksize;
-    kernel(i)=gauss<T>(p);
+    p = i - hksize;
+    kernel(i) = gauss<T>(p);
   }
-  kernel/=kernel(hksize, hksize)*std::sqrt(2.0*M_PI);
+  kernel /= kernel(hksize, hksize) * std::sqrt(static_cast<T>(2.0 * M_PI));
 }
-template<typename T>
+template <typename T>
 void
-gaussKernel(
-  const int ksize,
-  mtx<T>& kernel)
+gaussKernel(const int ksize, Matrix<T>& kernel)
 {
   kernel.resize(ksize, ksize);
-  const int hksize=ksize>>1;
-  vec<T, 2> p;
-  for(int i=0; i<ksize; ++i)
+  const int hksize = ksize >> 1;
+  Vector<T, 2> p;
+  for (int i = 0; i < ksize; ++i)
   {
-    p(0)=i-hksize;
-    for(int j=0; j<ksize; ++j)
+    p(0) = i - hksize;
+    for (int j = 0; j < ksize; ++j)
     {
-      p(1)=j-hksize;
-      kernel(i, j)=gauss<T, 2>(p);
+      p(1) = j - hksize;
+      kernel(i, j) = gauss<T, 2>(p);
     }
   }
-  kernel/=kernel(hksize, hksize)*2.0*M_PI;
+  kernel /= kernel(hksize, hksize) * static_cast<T>(2.0 * M_PI);
 }
 
-template<typename T, int NDims>
+template <typename T, int N>
 void
-gaussKernelIterate(
-  const int ksize, const int hksize,
-  const Eigen::Ref<const vec<T> >& sigmaInv,
-  const int d,
-  vec<T>& p,
-  array<int, NDims>& ind,
-  tensor<T, NDims>& kernel)
+gaussKernelIterate(const int ksize, const int hksize,
+                   const Ref<const Vector<T> >& sigmaInv, const int d,
+                   Vector<T>& p, Array<int, N>& ind, Tensor<T, N>& kernel)
 {
-  if(d>=NDims)
+  if (d >= N)
   {
-    kernel(ind)=gauss<T>(p, sigmaInv);
+    kernel(ind) = gauss<T>(p, sigmaInv);
     return;
   }
 
-  for(ind.at(d)=0; ind.at(d)<ksize; ++ind.at(d))
+  for (ind.at(d) = 0; ind.at(d) < ksize; ++ind.at(d))
   {
-    p(d)=ind.at(d)-hksize;
-    gaussKernelIterate<T, NDims>(ksize, hksize, sigmaInv, d+1, p, ind, kernel);
+    p(d) = ind.at(d) - hksize;
+    gaussKernelIterate<T, N>(ksize, hksize, sigmaInv, d + 1, p, ind, kernel);
   }
 }
-template<typename T, int NDims>
+template <typename T, int N>
 void
-gaussKernel(
-  const int ksize,
-  const Eigen::Ref<const vec<T> >& sigmaInv,
-  const T& sigmaDet,
-  tensor<T, NDims>& kernel)
+gaussKernel(const int ksize, const Ref<const Vector<T> >& sigmaInv,
+            const T& sigmaDet, Tensor<T, N>& kernel)
 {
-  assert(sigmaInv.size()==NDims);
+  assert(sigmaInv.size() == N);
 
-  array<int, NDims> sizeArray;
+  Array<int, N> sizeArray;
   sizeArray.fill(ksize);
   kernel.resize(sizeArray);
-  const int hksize=ksize>>1;
-  vec<T> p(NDims);
-  array<int, NDims> ind;
-  gaussKernelIterate<T, NDims>(ksize, hksize, sigmaInv, 0, p, ind, kernel);
+  const int hksize = ksize >> 1;
+  Vector<T> p(N);
+  Array<int, N> ind;
+  gaussKernelIterate<T, N>(ksize, hksize, sigmaInv, 0, p, ind, kernel);
   sizeArray.fill(hksize);
-  kernel=kernel/(kernel(sizeArray)*static_cast<T>(std::pow(2.0*M_PI, static_cast<T>(NDims)*0.5)*std::sqrt(sigmaDet)));
+  kernel =
+      kernel / (kernel(sizeArray) *
+                std::pow(static_cast<T>(2.0 * M_PI), static_cast<T>(N * 0.5)) *
+                std::sqrt(sigmaDet));
 }
-template<typename T>
+template <typename T>
 void
-gaussKernel(
-  const int ksize,
-  const T& sigmaInv,
-  const T& sigmaDet,
-  vec<T>& kernel)
+gaussKernel(const int ksize, const T& sigmaInv, const T& sigmaDet,
+            Vector<T>& kernel)
 {
   kernel.resize(ksize);
-  const int hksize=ksize>>1;
+  const int hksize = ksize >> 1;
   T p;
-  for(int i=0; i<ksize; ++i)
+  for (int i = 0; i < ksize; ++i)
   {
-    p=i-hksize;
-    kernel(i)=gauss<T>(p, sigmaInv);
+    p = i - hksize;
+    kernel(i) = gauss<T>(p, sigmaInv);
   }
-  kernel/=kernel(hksize, hksize)*2.0*M_PI*std::sqrt(sigmaDet);
+  kernel /=
+      kernel(hksize, hksize) * static_cast<T>(2.0 * M_PI) * std::sqrt(sigmaDet);
 }
-template<typename T>
+template <typename T>
 void
-gaussKernel(
-  const int ksize,
-  const Eigen::Ref<const vec<T> >& sigmaInv,
-  const T& sigmaDet,
-  mtx<T>& kernel)
+gaussKernel(const int ksize, const Ref<const Vector<T> >& sigmaInv,
+            const T& sigmaDet, Matrix<T>& kernel)
 {
-  assert(sigmaInv.size()==2);
+  assert(sigmaInv.size() == 2);
+
   kernel.resize(ksize, ksize);
-  const int hksize=ksize>>1;
-  vec<T, 2> p;
-  for(int i=0; i<ksize; ++i)
+  const int hksize = ksize >> 1;
+  Vector<T, 2> p;
+  for (int i = 0; i < ksize; ++i)
   {
-    p(0)=i-hksize;
-    for(int j=0; j<ksize; ++j)
+    p(0) = i - hksize;
+    for (int j = 0; j < ksize; ++j)
     {
-      p(1)=j-hksize;
-      kernel(i, j)=gauss<T, 2>(p, sigmaInv);
+      p(1) = j - hksize;
+      kernel(i, j) = gauss<T, 2>(p, sigmaInv);
     }
   }
-  kernel/=kernel(hksize, hksize)*2.0*M_PI*std::sqrt(sigmaDet);
+  kernel /=
+      kernel(hksize, hksize) * static_cast<T>(2.0 * M_PI) * std::sqrt(sigmaDet);
 }
+}  // namespace kernel
+}  // namespace event_model
 
-}
-
-#endif // GAUSS_KERNEL_H
+#endif  // GAUSS_KERNEL_H

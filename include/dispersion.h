@@ -1,16 +1,18 @@
 #ifndef DISPERSION_ALL_H
 #define DISPERSION_ALL_H
 
-#include "dispersion/approx_entropy/approx_potential.h"
-#include "dispersion/approx_entropy/approx_renyi.h"
-#include "dispersion/approx_entropy/approx_shannon.h"
-#include "dispersion/approx_entropy/approx_sharma_mittal.h"
-#include "dispersion/approx_entropy/approx_tsallis.h"
+// batch-based approximate measures
+#include "dispersion/approx_dispersion/potential.h"
+#include "dispersion/approx_dispersion/renyi.h"
+#include "dispersion/approx_dispersion/shannon.h"
+#include "dispersion/approx_dispersion/sharma_mittal.h"
+#include "dispersion/approx_dispersion/tsallis.h"
 
-#include "dispersion/entropy/potential.h"
-#include "dispersion/entropy/renyi.h"
-#include "dispersion/entropy/shannon.h"
-#include "dispersion/entropy/sharma_mittal.h"
-#include "dispersion/entropy/tsallis.h"
+// batch-based exact measures
+#include "dispersion/dispersion/potential.h"
+#include "dispersion/dispersion/renyi.h"
+#include "dispersion/dispersion/shannon.h"
+#include "dispersion/dispersion/sharma_mittal.h"
+#include "dispersion/dispersion/tsallis.h"
 
-#endif // DISPERSION_ALL_H
+#endif  // DISPERSION_ALL_H

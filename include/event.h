@@ -1,11 +1,11 @@
 #ifndef EVENT_ALL_H
 #define EVENT_ALL_H
 
-#include "event/event_type.h"
-#include "event/event_conversion.h"
-#include "event/event_io.h"
-#include "event/event_show.h"
-#include "event/event_transform.h"
-#include "event/event_undistort.h"
+#include "event/conversion.h"
+#include "event/io.h"
+#include "event/show.h"
+#include "event/transform.h"
+#include "event/type.h"
+#include "event/undistort.h"
 
-#endif // EVENT_ALL_H
+#endif  // EVENT_ALL_H

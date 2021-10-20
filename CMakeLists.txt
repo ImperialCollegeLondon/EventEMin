@@ -23,17 +23,17 @@ else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-pragmas")
 endif()
 
-find_package(Eigen3 REQUIRED)
-find_package(GSL REQUIRED)
-find_package(OpenCV REQUIRED)
-
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic -march=native -std=c++11")
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel." FORCE)
 endif()
 message("CMAKE_BUILD_TYPE is ${CMAKE_BUILD_TYPE}")
 
-# interface lib
+find_package(Eigen3 REQUIRED)
+find_package(OpenCV REQUIRED)
+find_package(GSL REQUIRED)
+
+# interface batch lib
 add_library(${LIB_NAME}_lib INTERFACE)
 target_include_directories(${LIB_NAME}_lib INTERFACE ${${LIB_NAME}_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIR} ${GSL_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
 target_link_libraries(${LIB_NAME}_lib INTERFACE ${GSL_LIBRARIES} ${OpenCV_LIBS})
@@ -41,9 +41,4 @@ target_link_libraries(${LIB_NAME}_lib INTERFACE ${GSL_LIBRARIES} ${OpenCV_LIBS})
 set_property(TARGET ${LIB_NAME}_lib PROPERTY EXPORT_NAME ${LIB_NAME}_lib)
 
 add_subdirectory(${${LIB_NAME}_SOURCE_DIRS})
-
-# build example binaries
-option(EVENT_MODEL_BUILD_EXAMPLES "Build event model examples" ON)
-if(EVENT_MODEL_BUILD_EXAMPLES)
-  add_subdirectory(${${LIB_NAME}_TEST_DIRS})
-endif()
+add_subdirectory(${${LIB_NAME}_TEST_DIRS})

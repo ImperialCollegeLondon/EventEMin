@@ -1,0 +1,7 @@
+﻿---
+BasedOnStyle: Google
+AlwaysBreakAfterDefinitionReturnType: All
+AlwaysBreakAfterReturnType: All
+BreakBeforeBraces: Allman
+DerivePointerAlignment: 'false'
+...

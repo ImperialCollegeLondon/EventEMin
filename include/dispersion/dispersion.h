@@ -3,9 +3,6 @@
 
 #include <cassert>
 #include <cmath>
-#include <Eigen/Core>
-#include <unsupported/Eigen/CXX11/Tensor>
-#include <vector>
 
 #include "data_stats.h"
 #include "gauss_kernel.h"
@@ -13,188 +10,168 @@
 
 namespace event_model
 {
-
-namespace dispersion
-{
-
-template<typename Derived>
+template <typename Derived>
 struct DispersionTraits;
 
-template<typename Derived>
-class Dispersion
+template <typename Derived>
+class DispersionBase
 {
-
-public:
-
+ public:
   typedef typename DispersionTraits<Derived>::Model Model;
   typedef typename DispersionTraits<Derived>::T T;
 
   enum
   {
-    InputsAtCompileTime=Model::nvars(),
-    ValuesAtCompileTime=1
+    NVars = Model::NVars,
+    NDims = Model::NDims,
+    InputsAtCompileTime = NVars,
+    ValuesAtCompileTime = 1
   };
 
-  typedef vec<T, InputsAtCompileTime> InputType;
-  typedef vec<T, ValuesAtCompileTime> ValueType;
+  typedef Vector<T, InputsAtCompileTime> InputType;
+  typedef Vector<T, ValuesAtCompileTime> ValueType;
 
-private:
+ private:
+  int nPoints_;
 
-  int npoints_;
-
-  T climDiffMax_;
   DataStats<T> cStats_;
+  Vector<T, NDims> cLimDiff_;
 
-protected:
-
+ protected:
   const Model model_;
-  Eigen::Map<const mtx<T> > c_;
-  Eigen::Map<const vec<T> > ts_;
-  Eigen::Map<const vec<int> > polarity_;
+  Map<const Matrix<T> > c_;
+  Map<const Vector<T> > ts_;
+  Map<const Vector<int> > polarity_;
 
-public:
+ public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-  Dispersion(void):
-    npoints_(0),
-    c_(nullptr, 0, 0), ts_(nullptr, 0), polarity_(nullptr, 0)
-  {}
-
-  static constexpr int
-  nvars(void)
+  DispersionBase(void)
+      : nPoints_(0), c_(nullptr, 0, 0), ts_(nullptr, 0), polarity_(nullptr, 0)
   {
-    return Model::nvars();
   }
-  static constexpr int
-  ndims(void)
-  {
-    return Model::ndims();
-  }
+
   int
-  npoints(void) const
+  nPoints(void) const
   {
-    return npoints_;
+    return nPoints_;
   }
-  const Eigen::Ref<const mtx<T> >
+  const Ref<const Matrix<T> >
   c(void) const
   {
     return c_;
   }
-  const Eigen::Ref<const vec<T> >
-  climMin(void) const
+  const Ref<const Vector<T> >
+  c(const int k) const
   {
-    return cStats_.minimum();
+    assert(0 <= k && k < nPoints());
+    return c_.col(k);
   }
   T
-  climMin(
-    const int d) const
+  cLimDiff(const int d) const
   {
-    return cStats_.minimum()(d);
+    assert(0 <= d && d < NDims);
+    return cLimDiff_(d);
   }
-  const Eigen::Ref<const vec<T> >
-  climMax(void) const
+  const Vector<T, NDims>&
+  cLimDiff(void) const
   {
-    return cStats_.maximum();
+    return cLimDiff_;
   }
-  T
-  climMax(
-    const int d) const
-  {
-    return cStats_.maximum()(d);
-  }
-  T
-  climDiffMax(void) const
-  {
-    return climDiffMax_;
-  }
-  const Eigen::Ref<const vec<T> >
+  const Ref<const Vector<T> >
   ts(void) const
   {
     return ts_;
   }
   T
-  ts(
-    const int k) const
+  ts(const int k) const
   {
+    assert(0 <= k && k < nPoints());
     return ts_(k);
   }
   T
-  tsref(void) const
+  tsRef(void) const
   {
     return ts_(0);
   }
   T
-  tsend(void) const
+  tsMiddle(void) const
   {
-    return ts_.template tail<1>()(0);
+    return ts_(nPoints() >> 1);
   }
-  const Eigen::Ref<const vec<int> >
+  T
+  tsEnd(void) const
+  {
+    return ts_(nPoints() - 1);
+  }
+  const Ref<const Vector<int> >
   polarity(void) const
   {
     return polarity_;
   }
   int
-  polarity(
-    const int k) const
+  polarity(const int k) const
   {
+    assert(0 <= k && k < nPoints());
     return polarity_(k);
   }
 
   void
-  assignPoints(
-    const Eigen::Ref<const mtx<T> >& c,
-    const Eigen::Ref<const vec<T> >& ts,
-    const Eigen::Ref<const vec<int> >& polarity)
+  assignPoints(const Ref<const Matrix<T> >& c, const Ref<const Vector<T> >& ts,
+               const Ref<const Vector<int> >& polarity)
   {
-    assert(ndims()==c.rows());
-    npoints_=c.cols();
-    assert(npoints()==ts.size() && npoints()==polarity.size());
-    new (&c_) Eigen::Map<const mtx<T> >(c.data(), ndims(), npoints());
-    new (&ts_) Eigen::Map<const vec<T> >(ts.data(), npoints());
-    new (&polarity_) Eigen::Map<const vec<int> >(polarity.data(), npoints());
+    assert(c.rows() == NDims);
+    nPoints_ = c.cols();
+    assert(ts.size() == nPoints());
+    assert(polarity.size() == nPoints());
 
-    cStats_.computeAll(c_);
-    climDiffMax_=(climMax()-climMin()).maxCoeff()+T(1.0e-8);
+    new (&c_)
+        Map<const Matrix<T> >(c.data(), static_cast<int>(NDims), nPoints());
+    new (&ts_) Map<const Vector<T> >(ts.data(), nPoints());
+    new (&polarity_) Map<const Vector<int> >(polarity.data(), nPoints());
+
+    cStats_.computeLimits(c_);
+    cLimDiff_ = (cStats_.max() - cStats_.min()).array() + T(1.0e-8);
+
+    this->underlying().computeDimScale();
   }
 
-  template<typename U>
+  template <typename U>
   void
-  operator()(
-    const vec<U, nvars()>& vars,
-    vec<U, 1>* f) const
+  operator()(const Vector<U, NVars>& vars, Vector<U, 1>* f) const
   {
-    mtx<U> cm(ndims(), npoints()), cmScaled(ndims(), npoints());
+    Matrix<U> cm(static_cast<int>(NDims), nPoints()),
+        cmScaled(static_cast<int>(NDims), nPoints());
 
     modelPoints(vars, cm);
-    scalePoints(cm, cmScaled);
+    scalePoints<U>(cm, cmScaled);
 
-    (*f)(0)=this->underlying().compute(cmScaled);
+    (*f)(0) = this->underlying().compute(cmScaled);
   }
 
-protected:
-
-  template<typename U>
+ protected:
+  template <typename U>
   void
-  modelPoints(
-    const vec<U, nvars()>& vars,
-    mtx<U>& cm) const
+  modelPoints(const Vector<U, NVars>& vars, Matrix<U>& cm) const
   {
     model_(vars, c(), ts(), cm);
   }
 
-  template<typename U>
+  template <typename U>
   void
-  scalePoints(
-    const mtx<U>& c,
-    mtx<U>& cScaled) const
+  scalePoints(const Ref<const Matrix<U> >& c, Ref<Matrix<U> > cScaled) const
   {
-    for(int d=0; d<ndims(); ++d)
+    for (int d = 0; d < NDims; ++d)
     {
-      cScaled.row(d)=((this->underlying().dimScale(d)-this->underlying().offset())/climDiffMax())*(c.row(d).array()-climMin(d))+this->underlying().halfOffset();
+      cScaled.row(d) =
+          ((this->underlying().dimScale(d) - this->underlying().offset()) /
+           cLimDiff_(d)) *
+              (c.row(d).array() - cStats_.min()(d)) +
+          this->underlying().halfOffset();
     }
   }
 
-private:
-
+ private:
   Derived&
   underlying(void)
   {
@@ -205,11 +182,7 @@ private:
   {
     return static_cast<const Derived&>(*this);
   }
-
 };
+}  // namespace event_model
 
-}
-
-}
-
-#endif // DISPERSION_H
+#endif  // DISPERSION_H

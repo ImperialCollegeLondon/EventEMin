@@ -2,16 +2,52 @@
 #define TYPES_DEF_H
 
 #include <Eigen/Core>
+#include <opencv2/core/eigen.hpp>
+#include <opencv2/opencv.hpp>
 #include <unsupported/Eigen/CXX11/Tensor>
+#include <vector>
 
-template<typename T, int rows=Eigen::Dynamic, int cols=Eigen::Dynamic>
-using mtx=typename Eigen::Matrix<T, rows, cols>;
-template<typename T, int rows=Eigen::Dynamic>
-using vec=typename Eigen::Matrix<T, rows, 1>;
+namespace event_model
+{
+// std definitions
+template <typename T>
+using StdVector = typename std::vector<T, Eigen::aligned_allocator<T> >;
 
-template<typename T, int rows>
-using array=typename Eigen::array<T, rows>;
-template<typename T, int rank>
-using tensor=typename Eigen::Tensor<T, rank>;
+// opencv definitions
+typedef cv::Mat CvMatrix;
+template <typename T, int N>
+using CvVector = cv::Vec<T, N>;
 
-#endif // TYPES_DEF_H
+#define CV_TYPE(T, N) CV_MAKETYPE(cv::DataDepth<T>::value, N)
+
+// Eigen definitions
+constexpr int Dynamic = Eigen::Dynamic;
+
+typedef Eigen::Index Index;
+
+template <typename T, int Rows>
+using Array = typename Eigen::array<T, Rows>;
+template <typename T, int Rows = Dynamic, int Cols = Dynamic>
+using Matrix = typename Eigen::Matrix<T, Rows, Cols>;
+template <typename T, int Cols = Dynamic>
+using RowVector = typename Eigen::Matrix<T, 1, Cols>;
+template <typename T, int rank>
+using Tensor = typename Eigen::Tensor<T, rank>;
+template <typename T, int Rows = Dynamic>
+using Vector = typename Eigen::Matrix<T, Rows, 1>;
+
+template <typename T>
+using DenseBase = typename Eigen::DenseBase<T>;
+template <typename T>
+using MatrixBase = typename Eigen::MatrixBase<T>;
+
+template <typename T>
+using Map = typename Eigen::Map<T>;
+
+template <typename T>
+using Ref = Eigen::Ref<T>;
+template <typename T>
+using TensorRef = typename Eigen::TensorRef<T>;
+}  // namespace event_model
+
+#endif  // TYPES_DEF_H

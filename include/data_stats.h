@@ -1,144 +1,131 @@
 #ifndef DATA_STATS_H
 #define DATA_STATS_H
 
+#include <Eigen/SVD>
 #include <cassert>
-#include <Eigen/Core>
 
 #include "types_def.h"
 
-template<typename T>
+namespace event_model
+{
+template <typename T>
 class DataStats
 {
+ protected:
+  Vector<T> min_, max_;
+  Vector<T> mean_;
+  Matrix<T> centred_, cov_;
 
-private:
+ public:
+  DataStats(void) = default;
 
-protected:
-
-  vec<T> minimum_, maximum_;
-  vec<T> mean_;
-  mtx<T> centred_, covariance_;
-
-public:
-
-  const vec<T>&
-  minimum(void) const
+  const Vector<T>&
+  min(void) const
   {
-    return minimum_;
+    return min_;
   }
-  const vec<T>&
-  maximum(void) const
+  const Vector<T>&
+  max(void) const
   {
-    return maximum_;
+    return max_;
   }
-  const vec<T>&
+  const Vector<T>&
   mean(void) const
   {
     return mean_;
   }
-  const mtx<T>&
+  const Matrix<T>&
   centred(void) const
   {
     return centred_;
   }
-  const mtx<T>&
-  covariance(void) const
+  const Matrix<T>&
+  cov(void) const
   {
-    return covariance_;
+    return cov_;
   }
 
   void
-  computeAll(
-    const Eigen::Ref<const mtx<T> >& data)
+  computeAll(const Ref<const Matrix<T> >& data)
   {
     computeLimits(data);
     computeMoments(data);
   }
   void
-  computeAll(
-    const Eigen::Ref<const mtx<T> >& data,
-    const Eigen::Ref<const vec<T> >& weights)
+  computeAll(const Ref<const Matrix<T> >& data,
+             const Ref<const Vector<T> >& weights)
   {
-    assert(data.cols()==weights.size());
+    assert(data.cols() == weights.size());
     computeLimits(data);
-    computeMoments(data, weights, weights.sum()+T(1.0e-32));
+    computeMoments(data, weights, weights.sum() + T(1.0e-32));
   }
 
   void
-  computeCentred(
-    const Eigen::Ref<const mtx<T> >& data)
+  computeCentred(const Ref<const Matrix<T> >& data)
   {
-    centred_.noalias()=data.colwise()-mean();
+    centred_ = data.colwise() - mean();
   }
   void
-  computeCovariance(void)
+  computeCov(void)
   {
-    assert(1<centred().cols());
-    covariance_.noalias()=centred()*centred().transpose()/(centred().cols()-1);
+    assert(centred().cols() > 1);
+    cov_.noalias() = centred() * centred().transpose() / (centred().cols() - 1);
   }
   void
-  computeCovariance(
-    const Eigen::Ref<const vec<T> >& weights,
-    const T& weightsSum)
+  computeCov(const Ref<const Vector<T> >& weights, const T& weightsSum)
   {
-    covariance_.noalias()=(centred().array().rowwise()*weights.transpose().array()).matrix()*centred().transpose()/weightsSum;
+    cov_.noalias() =
+        (centred().array().rowwise() * weights.transpose().array()).matrix() *
+        centred().transpose() / weightsSum;
   }
   void
-  computeMean(
-    const Eigen::Ref<const mtx<T> >& data)
+  computeMean(const Ref<const Matrix<T> >& data)
   {
-    mean_.noalias()=data.rowwise().mean();
+    mean_ = data.rowwise().mean();
   }
   void
-  computeMean(
-    const Eigen::Ref<const mtx<T> >& data,
-    const Eigen::Ref<const vec<T> >& weights,
-    const T& weightsSum)
+  computeMean(const Ref<const Matrix<T> >& data,
+              const Ref<const Vector<T> >& weights, const T& weightsSum)
   {
-    mean_.noalias()=(data.array().rowwise()*weights.transpose().array()).matrix().rowwise().sum()/weightsSum;
+    mean_.noalias() = (data.array().rowwise() * weights.transpose().array())
+                          .matrix()
+                          .rowwise()
+                          .sum() /
+                      weightsSum;
   }
   void
-  computeMoments(
-    const Eigen::Ref<const mtx<T> >& data)
+  computeMoments(const Ref<const Matrix<T> >& data)
   {
     computeMean(data);
     computeCentred(data);
-    computeCovariance();
+    computeCov();
   }
   void
-  computeMoments(
-    const Eigen::Ref<const mtx<T> >& data,
-    const Eigen::Ref<const vec<T> >& weights,
-    const T& weightsSum)
+  computeMoments(const Ref<const Matrix<T> >& data,
+                 const Ref<const Vector<T> >& weights, const T& weightsSum)
   {
     computeMean(data, weights, weightsSum);
     computeCentred(data);
-    computeCovariance(weights, weightsSum);
+    computeCov(weights, weightsSum);
   }
 
   void
-  computeMinimum(
-    const Eigen::Ref<const mtx<T> >& data)
+  computeMin(const Ref<const Matrix<T> >& data)
   {
-    minimum_=data.rowwise().minCoeff();
+    min_ = data.rowwise().minCoeff();
   }
   void
-  computeMaximum(
-    const Eigen::Ref<const mtx<T> >& data)
+  computeMax(const Ref<const Matrix<T> >& data)
   {
-    maximum_=data.rowwise().maxCoeff();
+    max_ = data.rowwise().maxCoeff();
   }
   void
-  computeLimits(
-    const Eigen::Ref<const mtx<T> >& data)
+  computeLimits(const Ref<const Matrix<T> >& data)
   {
-    computeMinimum(data);
-    computeMaximum(data);
+    computeMin(data);
+    computeMax(data);
   }
-
-protected:
-
-private:
-
 };
+}  // namespace event_model
 
-#endif // DATA_STATS_H
+#endif  // DATA_STATS_H

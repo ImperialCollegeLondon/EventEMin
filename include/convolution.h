@@ -4,111 +4,91 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
-#include <Eigen/Core>
-#include <unsupported/Eigen/CXX11/Tensor>
 #include <utility>
 
-namespace convolution
-{
+#include "types_def.h"
 
-template<typename T>
+namespace event_model
+{
+template <typename T>
 struct OffsetOp
 {
   T
-  operator()(
-    const T& val) const
+  operator()(const T& val) const
   {
-    return (val-1)>>1;
+    return (val - 1) >> 1;
   }
 
   T
-  operator()(
-    const T& val1, const T& val2) const
+  operator()(const T& val1, const T& val2) const
   {
-    return val1+val2-1;
+    return val1 + val2 - 1;
   }
 };
 
-template<typename T>
+template <typename T>
 struct AddOffsetOp
 {
   T
-  operator()(
-    const T& val1, const T& val2) const
+  operator()(const T& val1, const T& val2) const
   {
-    return val1+val2;
+    return val1 + val2;
   }
 };
 
-template<typename T>
+template <typename T>
 struct SubOffsetOp
 {
   T
-  operator()(
-    const T& val1, const T& val2) const
+  operator()(const T& val1, const T& val2) const
   {
-    return val1-val2-1;
+    return val1 - val2 - 1;
   }
 };
 
-template<typename Container, typename Functor>
+template <typename Container, typename Functor>
 Container
-transform(
-  const Container& c, Functor&& op)
+transform(const Container& c, Functor&& op)
 {
   Container container;
   std::transform(c.begin(), c.end(), container.begin(), op);
   return container;
 }
 
-template<typename Container, typename Functor>
+template <typename Container, typename Functor>
 Container
-transform(
-  const Container& c1, const Container& c2, Functor&& op)
+transform(const Container& c1, const Container& c2, Functor&& op)
 {
   Container container;
   std::transform(c1.begin(), c1.end(), c2.begin(), container.begin(), op);
   return container;
 }
 
-template<typename T, int N, typename U=T>
+template <typename T, int N, typename U = T>
 class Convolution
 {
+ private:
+  const Array<Index, N> dim_;
+  const Array<Index, N> kdim_;
+  const Array<Index, N> offset_;
 
-public:
-
-  typedef Eigen::Tensor<T, N> tensorT;
-  typedef Eigen::Tensor<U, N> tensorU;
-  typedef Eigen::array<Eigen::Index, N> arrayN;
-
-private:
-
-  const arrayN dim_;
-  const arrayN kdim_;
-  const arrayN offset_;
-
-protected:
-
+ protected:
   const U lambda_;
 
-  tensorT tensor_;
-  tensorU ttensor_;
+  Tensor<T, N> val_;
+  Tensor<U, N> ts_;
 
-public:
-
-  Convolution(
-    const arrayN& dim,
-    const arrayN& kdim,
-    const U& lambda=U(2.0*M_PI),
-    const U& tref=U(0.0)):
-    dim_(dim),
-    kdim_(kdim),
-    offset_(std::move(transform(kdim_, OffsetOp<Eigen::Index>()))),
-    lambda_(lambda),
-    tensor_(std::move(transform(dim_, kdim_, OffsetOp<Eigen::Index>()))), ttensor_(dim_)
+ public:
+  Convolution(const Array<Index, N>& dim, const Array<Index, N>& kdim,
+              const U& lambda = U(2.0 * M_PI), const U& tsRef = U(0.0))
+      : dim_(dim),
+        kdim_(kdim),
+        offset_(std::move(transform(kdim_, OffsetOp<Index>()))),
+        lambda_(lambda),
+        val_(std::move(transform(dim_, kdim_, OffsetOp<Index>()))),
+        ts_(dim_)
   {
-    setZero();
-    setZeroTime(tref);
+    reset(tsRef);
   }
 
   U
@@ -116,124 +96,102 @@ public:
   {
     return lambda_;
   }
-  const Eigen::TensorRef<const tensorT>
-  tensor(void) const
+  const TensorRef<const Tensor<T, N>>
+  val(void) const
   {
-    return tensor_;
+    return val_;
   }
   T
-  tensor(
-    const arrayN& ind) const
+  val(const Array<Index, N>& ind) const
   {
-    return tensor_(std::move(transform(ind, offset_, AddOffsetOp<Eigen::Index>())));
+    return val_(std::move(transform(ind, offset_, AddOffsetOp<Index>())));
   }
-  const Eigen::TensorRef<const tensorU>
-  ttensor(void) const
+  const TensorRef<const Tensor<U, N>>
+  ts(void) const
   {
-    return ttensor_;
+    return ts_;
   }
   U
-  ttensor(
-    const arrayN& ind) const
+  ts(const Array<Index, N>& ind) const
   {
-    return ttensor_(ind);
+    return ts_(ind);
   }
 
   void
-  conv(
-    const arrayN& ind,
-    const U& ts,
-    const T& pval,
-    const tensorU& kernel)
+  conv(const Array<Index, N>& ind, const U& ts, const T& val,
+       const Tensor<U, N>& kernel)
   {
-    // found no better way of doing this using Eigen::Tensor
-    const U expts=std::exp(-lambda_*(ts-ttensor(ind)));
-    const arrayN dim(std::move(transform(ind, kdim_, AddOffsetOp<Eigen::Index>())));
-    arrayN indTemp;
-    iterate(expts, pval, kernel, 0, dim, ind, indTemp);
-    ttensor_(ind)=ts;
+    // found no better way of doing this using Tensor
+    const U expts = std::exp(-lambda_ * (ts - ts_(ind)));
+    const Array<Index, N> dim(
+        std::move(transform(ind, kdim_, AddOffsetOp<Index>())));
+    Array<Index, N> indTemp;
+    iterate(expts, val, kernel, 0, dim, ind, indTemp);
+    ts_(ind) = ts;
   }
 
-  // found no efficient way of implementing update() using Eigen::Tensor
+  // found no efficient way of implementing update() using Tensor
 
   void
-  setZero(void)
+  reset(const U& ti = U(0.0))
   {
-    tensor_.setZero();
-  }
-  void
-  setZeroTime(
-    const U& ti=U(0.0))
-  {
-    ttensor_.setConstant(ti);
+    val_.setZero();
+    ts_.setConstant(ti);
   }
 
-protected:
-
+ protected:
   void
-  iterate(
-    const U& expts,
-    const T& pval,
-    const tensorU& kernel,
-    const int d,
-    const arrayN& dim, const arrayN& iind,
-    arrayN& ind)
+  iterate(const U& expts, const T& val, const Tensor<U, N>& kernel, const int d,
+          const Array<Index, N>& dim, const Array<Index, N>& iind,
+          Array<Index, N>& ind)
   {
-    if(d>=N)
+    if (d >= N)
     {
-      const arrayN kind(std::move(transform(dim, ind, SubOffsetOp<Eigen::Index>())));
-      tensor_(ind)*=expts;
-      tensor_(ind)+=pval*kernel(kind);
+      const Array<Index, N> kind(
+          std::move(transform(dim, ind, SubOffsetOp<Index>())));
+      val_(ind) *= expts;
+      val_(ind) += val * kernel(kind);
       return;
     }
 
-    for(ind.at(d)=iind.at(d); ind.at(d)<dim.at(d); ++ind.at(d))
+    for (ind[d] = iind[d]; ind[d] < dim[d]; ++ind[d])
     {
-      iterate(expts, pval, kernel, d+1, dim, iind, ind);
+      iterate(expts, val, kernel, d + 1, dim, iind, ind);
     }
   }
 
-private:
-
+ private:
 };
 
-template<typename T, typename U=T>
+template <typename T, typename U = T>
 class Convolution2
 {
-
-public:
-  
-  typedef Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> mtxT;
-  typedef Eigen::Matrix<U, Eigen::Dynamic, Eigen::Dynamic> mtxU;
-
-private:
-
+ private:
   const int width_, height_;
   const int kwidth_, kheight_;
   const int xoffset_, yoffset_;
 
-protected:
-
+ protected:
   const U lambda_;
 
-  mtxT mtx_;
-  mtxU tmtx_;
+  Matrix<T> val_;
+  Matrix<U> ts_;
 
-public:
-
-  Convolution2(
-    const int width, const int height,
-    const int kwidth, const int kheight,
-    const U& lambda=U(2.0*M_PI),
-    const U& tref=U(0.0)):
-    width_(width), height_(height),
-    kwidth_(kwidth), kheight_(kheight),
-    xoffset_((kwidth_-1)>>1), yoffset_((kheight_-1)>>1),
-    lambda_(lambda),
-    mtx_(width_+kwidth_-1, height_+kheight_-1), tmtx_(width_, height_)
+ public:
+  Convolution2(const int width, const int height, const int kwidth,
+               const int kheight, const U& lambda = U(2.0 * M_PI),
+               const U& tsRef = U(0.0))
+      : width_(width),
+        height_(height),
+        kwidth_(kwidth),
+        kheight_(kheight),
+        xoffset_((kwidth_ - 1) >> 1),
+        yoffset_((kheight_ - 1) >> 1),
+        lambda_(lambda),
+        val_(width_ + kwidth_ - 1, height_ + kheight_ - 1),
+        ts_(width_, height_)
   {
-    setZero();
-    setZeroTime(tref);
+    reset(tsRef);
   }
 
   int
@@ -251,106 +209,119 @@ public:
   {
     return lambda_;
   }
-  const Eigen::Ref<const mtxT>
-  mtx(void) const
+  const Ref<const Matrix<T>>
+  val(void) const
   {
-    return mtx_.block(xoffset_, yoffset_, width(), height());
+    return val_.block(xoffset_, yoffset_, width(), height());
   }
   T
-  mtx(
-    const int x, const int y) const
+  val(const int x, const int y) const
   {
-    assert(-xoffset_<=x && x<width()+xoffset_ && -yoffset_<=y && y<height()+yoffset_);
-    return mtx_(x+xoffset_, y+yoffset_);
+    assert(-xoffset_ <= x && x < width() + xoffset_);
+    assert(-yoffset_ <= y && y < height() + yoffset_);
+    return val_(x + xoffset_, y + yoffset_);
   }
-  const Eigen::Ref<const mtxU>
-  tmtx(void) const
+  const Ref<const Matrix<U>>
+  ts(void) const
   {
-    return tmtx_;
+    return ts_;
   }
   U
-  tmtx(
-    const int x, const int y) const
+  ts(const int x, const int y) const
   {
-    assert(0<=x && x<width() && 0<=y && y<height());
-    return tmtx_(x, y);
+    assert(0 <= x && x < width());
+    assert(0 <= y && y < height());
+    return ts_(x, y);
   }
 
   void
-  conv(
-    const int x, const int y,
-    const U& ts, const U& lambda,
-    const T& pval,
-    const mtxU& kernel)
+  conv(const int x, const int y, const U& ts, const U& lambda, const T& val,
+       const Matrix<U>& kernel)
   {
-    assert(0<=x && x<width() && 0<=y && y<height());
-    assert(kernel.rows()<=kwidth_ && kernel.cols()<=kheight_);
+    assert(0 <= x && x < width());
+    assert(0 <= y && y < height());
+    assert(kernel.rows() <= kwidth_);
+    assert(kernel.cols() <= kheight_);
 
-    mtx_.template block(x, y, kernel.rows(), kernel.cols())*=std::exp(-lambda*(ts-tmtx(x, y)));
-    mtx_.template block(x, y, kernel.rows(), kernel.cols())+=pval*kernel.reverse();
-    tmtx_(x, y)=ts;
+    val_.template block(x, y, kernel.rows(), kernel.cols()) *=
+        std::exp(-lambda * (ts - ts_(x, y)));
+    val_.template block(x, y, kernel.rows(), kernel.cols()) +=
+        val * kernel.reverse();
+    ts_(x, y) = ts;
   }
 
   void
-  conv(
-    const int x, const int y,
-    const U& ts,
-    const T& pval,
-    const mtxU& kernel)
+  conv(const int x, const int y, const U& ts, const T& val,
+       const Matrix<U>& kernel)
   {
-    conv(x, y, ts, lambda(), pval, kernel);
+    conv(x, y, ts, lambda(), val, kernel);
   }
 
   void
-  update(
-    const U& ts)
+  update(const U& ts)
   {
-    const mtxU tsimg((-lambda()*(ts-tmtx().array())).exp());
+    const Matrix<U> tsimg((-lambda() * (ts - ts_.array())).exp());
 
-    /* core image block */
-    mtx_.block(xoffset_, yoffset_, width(), height()).array()*=tsimg.array();
+    // core image block
+    val_.block(xoffset_, yoffset_, width(), height()).array() *= tsimg.array();
 
     /* reflective time update */
 
-    /* top left corner image block */
-    mtx_.topLeftCorner(xoffset_, yoffset_).array()*=tsimg.block(1, 1, xoffset_, yoffset_).reverse().array();
-    /* top right corner image block */
-    mtx_.topRightCorner(xoffset_, yoffset_).array()*=tsimg.block(1, height()-1-yoffset_, xoffset_, yoffset_).reverse().array();
-    /* bottom left corner image block */
-    mtx_.bottomLeftCorner(xoffset_, yoffset_).array()*=tsimg.block(width()-1-xoffset_, 1, xoffset_, yoffset_).reverse().array();
-    /* bottom right corner image block */
-    mtx_.bottomRightCorner(xoffset_, yoffset_).array()*=tsimg.block(width()-1-xoffset_, height()-1-yoffset_, xoffset_, yoffset_).reverse().array();
-    
-    /* top image rows */
-    mtx_.topRows(xoffset_).middleCols(yoffset_, height()).array()*=tsimg.middleRows(xoffset_, xoffset_).colwise().reverse().array();
-    /* bottom image rows */
-    mtx_.bottomRows(xoffset_).middleCols(yoffset_, height()).array()*=tsimg.middleRows(width()-1-xoffset_, xoffset_).colwise().reverse().array();
-    /* left image columns */
-    mtx_.leftCols(yoffset_).middleRows(xoffset_, width()).array()*=tsimg.middleCols(yoffset_, yoffset_).rowwise().reverse().array();
-    /* right image columns */
-    mtx_.rightCols(yoffset_).middleRows(xoffset_, width()).array()*=tsimg.middleCols(height()-1-yoffset_, yoffset_).rowwise().reverse().array();
-    
-    setZeroTime(ts);
+    // top left corner image block
+    val_.topLeftCorner(xoffset_, yoffset_).array() *=
+        tsimg.block(1, 1, xoffset_, yoffset_).reverse().array();
+    // top right corner image block
+    val_.topRightCorner(xoffset_, yoffset_).array() *=
+        tsimg.block(1, height() - 1 - yoffset_, xoffset_, yoffset_)
+            .reverse()
+            .array();
+    // bottom left corner image block
+    val_.bottomLeftCorner(xoffset_, yoffset_).array() *=
+        tsimg.block(width() - 1 - xoffset_, 1, xoffset_, yoffset_)
+            .reverse()
+            .array();
+    // bottom right corner image block
+    val_.bottomRightCorner(xoffset_, yoffset_).array() *=
+        tsimg
+            .block(width() - 1 - xoffset_, height() - 1 - yoffset_, xoffset_,
+                   yoffset_)
+            .reverse()
+            .array();
+
+    // top image rows
+    val_.topRows(xoffset_).middleCols(yoffset_, height()).array() *=
+        tsimg.middleRows(xoffset_, xoffset_).colwise().reverse().array();
+    // bottom image rows
+    val_.bottomRows(xoffset_).middleCols(yoffset_, height()).array() *=
+        tsimg.middleRows(width() - 1 - xoffset_, xoffset_)
+            .colwise()
+            .reverse()
+            .array();
+    // left image columns
+    val_.leftCols(yoffset_).middleRows(xoffset_, width()).array() *=
+        tsimg.middleCols(yoffset_, yoffset_).rowwise().reverse().array();
+    // right image columns
+    val_.rightCols(yoffset_).middleRows(xoffset_, width()).array() *=
+        tsimg.middleCols(height() - 1 - yoffset_, yoffset_)
+            .rowwise()
+            .reverse()
+            .array();
+
+    resetTime(ts);
   }
 
   void
-  setZero(void)
+  reset(const U& ti = U(0.0))
   {
-    mtx_.setZero();
+    val_.setZero();
+    resetTime(ti);
   }
   void
-  setZeroTime(
-    const U& ti=U(0.0))
+  resetTime(const U& ti = U(0.0))
   {
-    tmtx_.setConstant(ti);
+    ts_.setConstant(ti);
   }
-
-protected:
-
-private:
-
 };
+}  // namespace event_model
 
-}
-
-#endif // CONVOLUTION_H
+#endif  // CONVOLUTION_H
