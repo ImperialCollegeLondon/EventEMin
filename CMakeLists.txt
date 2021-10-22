@@ -33,7 +33,7 @@ find_package(Eigen3 REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(GSL REQUIRED)
 
-# interface batch lib
+# interface lib
 add_library(${LIB_NAME}_lib INTERFACE)
 target_include_directories(${LIB_NAME}_lib INTERFACE ${${LIB_NAME}_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIR} ${GSL_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
 target_link_libraries(${LIB_NAME}_lib INTERFACE ${GSL_LIBRARIES} ${OpenCV_LIBS})

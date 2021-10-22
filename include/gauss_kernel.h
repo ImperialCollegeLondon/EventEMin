@@ -58,7 +58,7 @@ gauss(const Ref<const Vector<T> >& x, const Ref<const Vector<T> >& sigmaInv)
 template <typename T, int N>
 void
 gaussKernelIterate(const int ksize, const int hksize, const int d, Vector<T>& p,
-                   Array<int, N>& ind, Tensor<T, N>& kernel)
+                   Array<Index, N>& ind, Tensor<T, N>& kernel)
 {
   if (d >= N)
   {
@@ -66,9 +66,9 @@ gaussKernelIterate(const int ksize, const int hksize, const int d, Vector<T>& p,
     return;
   }
 
-  for (ind.at(d) = 0; ind.at(d) < ksize; ++ind.at(d))
+  for (ind[d] = 0; ind[d] < ksize; ++ind[d])
   {
-    p(d) = ind.at(d) - hksize;
+    p(d) = ind[d] - hksize;
     gaussKernelIterate<T, N>(ksize, hksize, d + 1, p, ind, kernel);
   }
 }
@@ -76,12 +76,12 @@ template <typename T, int N>
 void
 gaussKernel(const int ksize, Tensor<T, N>& kernel)
 {
-  Array<int, N> sizeArray;
+  Array<Index, N> sizeArray;
   sizeArray.fill(ksize);
   kernel.resize(sizeArray);
   const int hksize = ksize >> 1;
   Vector<T> p(N);
-  Array<int, N> ind;
+  Array<Index, N> ind;
   gaussKernelIterate<T, N>(ksize, hksize, 0, p, ind, kernel);
   sizeArray.fill(hksize);
   kernel = kernel / (kernel(sizeArray) * std::pow(static_cast<T>(2.0 * M_PI),
@@ -124,7 +124,7 @@ template <typename T, int N>
 void
 gaussKernelIterate(const int ksize, const int hksize,
                    const Ref<const Vector<T> >& sigmaInv, const int d,
-                   Vector<T>& p, Array<int, N>& ind, Tensor<T, N>& kernel)
+                   Vector<T>& p, Array<Index, N>& ind, Tensor<T, N>& kernel)
 {
   if (d >= N)
   {
@@ -132,9 +132,9 @@ gaussKernelIterate(const int ksize, const int hksize,
     return;
   }
 
-  for (ind.at(d) = 0; ind.at(d) < ksize; ++ind.at(d))
+  for (ind[d] = 0; ind[d] < ksize; ++ind[d])
   {
-    p(d) = ind.at(d) - hksize;
+    p(d) = ind[d] - hksize;
     gaussKernelIterate<T, N>(ksize, hksize, sigmaInv, d + 1, p, ind, kernel);
   }
 }
@@ -145,12 +145,12 @@ gaussKernel(const int ksize, const Ref<const Vector<T> >& sigmaInv,
 {
   assert(sigmaInv.size() == N);
 
-  Array<int, N> sizeArray;
+  Array<Index, N> sizeArray;
   sizeArray.fill(ksize);
   kernel.resize(sizeArray);
   const int hksize = ksize >> 1;
   Vector<T> p(N);
-  Array<int, N> ind;
+  Array<Index, N> ind;
   gaussKernelIterate<T, N>(ksize, hksize, sigmaInv, 0, p, ind, kernel);
   sizeArray.fill(hksize);
   kernel =

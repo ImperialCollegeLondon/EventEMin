@@ -29,7 +29,7 @@ class Model
   typedef Vector<T, ValuesAtCompileTime> ValueType;
 
  protected:
-  const Func func_;
+  Func func_;
 
  public:
   Model(void) = default;

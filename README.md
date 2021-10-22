@@ -30,7 +30,7 @@ or
   sudo apt install libeigen3-dev
   ```
 
-GSL - GNU (optional, only used for the batch mode): <https://www.gnu.org/software/gsl/>
+GSL - GNU: <https://www.gnu.org/software/gsl/>
   ```
   git clone https://github.com/ampl/gsl.git
   cd gsl
