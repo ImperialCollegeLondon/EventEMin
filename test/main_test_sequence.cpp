@@ -2,14 +2,9 @@
 #include <iostream>
 #include <string>
 
-#include "dispersion.h"
-#include "event.h"
-#include "image.h"
-#include "model.h"
-#include "optimiser.h"
-#include "types_def.h"
+#include "EventEMin.h"
 
-using namespace event_model;
+using namespace EventEMin;
 
 int
 main(int argc, char* argv[])
@@ -48,11 +43,11 @@ main(int argc, char* argv[])
   // typedef SharmaMittal<Model> Dispersion;
   // typedef Tsallis<Model> Dispersion;
   // approximate measures
-  // typedef ApproxPotential<Model> Dispersion;
-  // typedef ApproxRenyi<Model> Dispersion;
-  // typedef ApproxShannon<Model> Dispersion;
-  // typedef ApproxSharmaMittal<Model> Dispersion;
-  typedef ApproxTsallis<Model> Dispersion;
+  // typedef ApproximatePotential<Model> Dispersion;
+  // typedef ApproximateRenyi<Model> Dispersion;
+  // typedef ApproximateShannon<Model> Dispersion;
+  // typedef ApproximateSharmaMittal<Model> Dispersion;
+  typedef ApproximateTsallis<Model> Dispersion;
 
   // optimiser
   typedef GSLfdfOptimiser<Dispersion> Optimiser;

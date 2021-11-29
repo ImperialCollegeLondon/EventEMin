@@ -1,8 +1,6 @@
-#include "dispersion.h"
-#include "model.h"
-#include "test.h"
+#include "EventEMin.h"
 
-using namespace event_model;
+using namespace EventEMin;
 
 int
 main(void)
@@ -22,11 +20,11 @@ main(void)
   // typedef SharmaMittal<Model> Dispersion;
   // typedef Tsallis<Model> Dispersion;
   // approximate measures
-  // typedef ApproxPotential<Model> Dispersion;
-  // typedef ApproxRenyi<Model> Dispersion;
-  // typedef ApproxShannon<Model> Dispersion;
-  // typedef ApproxSharmaMittal<Model> Dispersion;
-  typedef ApproxTsallis<Model> Dispersion;
+  // typedef ApproximatePotential<Model> Dispersion;
+  // typedef ApproximateRenyi<Model> Dispersion;
+  // typedef ApproximateShannon<Model> Dispersion;
+  // typedef ApproximateSharmaMittal<Model> Dispersion;
+  typedef ApproximateTsallis<Model> Dispersion;
 
   // test parameters for batch mode - default parameters
   TestBatchParams testBatchParams;
