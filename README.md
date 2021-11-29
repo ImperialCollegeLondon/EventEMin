@@ -3,7 +3,8 @@
 
 Code for the following papers:
 - [Entropy Minimisation Framework for Event-based Vision Model Estimation](http://www.ecva.net/papers/eccv_2020/papers_ECCV/papers/123500154.pdf)
-- [Robust Event-based Vision Model Estimation by Dispersion Minimisation](10.1109/TPAMI.2021.3130049)
+- [Robust Event-based Vision Model Estimation by Dispersion Minimisation](https://ieeexplore.ieee.org/document/9625712)
+
 The authors provide this code in the hope it will be useful for understanding the proposed method, as well as for reproducibility of the results.
 
 For more information and more open-source software please visit the Personal Robotic Lab's website: <https://www.imperial.ac.uk/personal-robotics/>.
