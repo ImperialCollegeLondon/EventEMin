@@ -73,6 +73,10 @@ Lastly, ensure all environment path variables are well set, and compile everythi
   make
   ```
 
+## ROS
+A ROS package for real-time incremental estimation can be found on the following repository:
+<https://github.com/ImperialCollegeLondon/event_emin_ros>.
+
 ## Datasets
 We provide samples in the [dataset](./dataset) folder, corresponding to some results obtained in the paper.
 Most of the examples provided work with these samples, so you are not required to download any dataset.
