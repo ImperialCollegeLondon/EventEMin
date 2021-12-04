@@ -34,22 +34,14 @@ struct SixDOF
   {
     const Map<const Vector<U, NVars> > varsMap(vars);
     const Map<const Vector<U, NW> > w(varsMap.template segment<NW>(0).data());
-    const Map<const Vector<U, NW> > v(varsMap.template segment<NV>(NW).data());
+    const Map<const Vector<U, NV> > v(varsMap.template segment<NV>(NW).data());
 
+    // First-order Taylor expansion
     Matrix<U, NMatrix, NMatrix> skewMtx;
     skewMtx << T(0.0), -w(2), w(1), v(0), w(2), T(0.0), -w(0), v(1), -w(1),
         w(0), T(0.0), v(2), T(0.0), T(0.0), T(0.0), T(0.0);
     m = t * skewMtx;
     m.diagonal().array() += T(1.0);
-    const U wNorm = w.norm();
-    if (U(0.0) < wNorm)
-    {
-      const U theta = t * wNorm;
-      skewMtx /= wNorm;
-      m += ((T(1.0) - cos(theta)) * skewMtx +
-            (theta - sin(theta)) * skewMtx * skewMtx) *
-           skewMtx;
-    }
   }
 
   template <typename U, typename V>
