@@ -11,6 +11,7 @@ if(${LIB_NAME}_BATCH_MODE)
   add_new_executable(translation2d)
 
   add_new_executable(test_sequence)
+  add_new_executable(test_sequence_3d)
 endif()
 
 if(${LIB_NAME}_INCREMENTAL_MODE)
@@ -19,4 +20,5 @@ if(${LIB_NAME}_INCREMENTAL_MODE)
   add_new_executable(incremental_translation2d)
 
   add_new_executable(incremental_test_sequence)
+  add_new_executable(incremental_test_sequence_3d)
 endif()

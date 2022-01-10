@@ -9,11 +9,12 @@ using namespace EventEMin;
 int
 main(int argc, char* argv[])
 {
-  if (argc < 5)
+  if (argc < 7)
   {
     std::cout << "usage: " << argv[0]
               << " [events dir] [number of events] "
-                 "[saving dir] [file name]\n";
+                 "[min depth] [depth scale] [saving dir] [file "
+                 "name]\n";
     return -1;
   }
 
@@ -22,12 +23,8 @@ main(int argc, char* argv[])
   /* you can modify the model used by uncommenting the corresponding line */
 
   // model
-  // typedef IncrementalAffinity<T> Model;
-  // typedef IncrementalIsometry<T> Model;
-  typedef IncrementalRotation<T> Model;
-  // typedef IncrementalSimilarity<T> Model;
-  // typedef IncrementalTranslation2D<T> Model;
-  // typedef IncrementalTranslationNormal<T> Model;
+  typedef IncrementalSixDOF<T> Model;
+  // typedef IncrementalTranslation3D<T> Model;
 
   constexpr int NDims = Model::NDims;
 
@@ -37,10 +34,8 @@ main(int argc, char* argv[])
   // incremental measures
   typedef IncrementalPotential<Model> Dispersion;
   // typedef IncrementalTsallis<Model> Dispersion;
-  // typedef IncrementalPotentialWhiten<Model> Dispersion;
-  // typedef IncrementalTsallisWhiten<Model> Dispersion;
 
-  // read distorted events from file
+  // read undistorted depth-augmented events from file
   const std::string fevents(std::string(argv[1]) + "/events.txt");
   std::ifstream fin(fevents.c_str());
   if (!fin.is_open())
@@ -50,8 +45,8 @@ main(int argc, char* argv[])
   }
 
   // write estimates to file
-  const std::string festimates(std::string(argv[3]) + "/" +
-                               std::string(argv[4]) + "_estimates.txt");
+  const std::string festimates(std::string(argv[5]) + "/" +
+                               std::string(argv[6]) + "_estimates.txt");
   std::ofstream fout(festimates.c_str());
   if (!fout.is_open())
   {
@@ -60,23 +55,17 @@ main(int argc, char* argv[])
   }
 
   int width, height;
-  cv::Mat camParamsCV, distCoeffs;
+  Matrix<T, 3, 3> camParams;
   const std::string fcalib(std::string(argv[1]) + "/calib.txt");
-  const IO_STATUS ioStatus =
-      loadCamParams<T>(fcalib, width, height, camParamsCV, distCoeffs);
+  const IO_STATUS ioStatus = loadCamParams<T>(fcalib, width, height, camParams);
   if (ioStatus != IO_SUCCESS)
   {
     ioStatusMessage(ioStatus, fcalib);
     return -1;
   }
 
-  // initialise grid-based undistortion map
-  Matrix<T, 3, 3> camParams;
-  cv::cv2eigen(camParamsCV, camParams);
-  cv::Mat undistortionMap;
-  initUndistort<T>(width, height, camParamsCV, distCoeffs, undistortionMap);
-
-  const Vector<T, NDims> scale(Vector<T, NDims>::Ones());
+  Vector<T, NDims> scale;
+  scale << T(1.0), T(1.0), std::atof(argv[4]);
 
   // tolerance that indicates a minimum has been reached
   const T minStep = T(1.0e-6);
@@ -90,14 +79,21 @@ main(int argc, char* argv[])
                         Dispersion::Params(minStep, maxIter, wSize), nEvents,
                         {width, height});
 
+  const T depthThresh = std::atof(argv[3]);
   Vector<T, NDims> c, ct;
   T ts;
   int polarity;
 
-  for (int k = 0; undistort<T, NDims>(0, width, 0, height, undistortionMap, fin,
-                                      c, ts, polarity) == IO_SUCCESS;
-       ++k)
+  for (int k = 0; load<T, NDims>(fin, c, ts, polarity) == IO_SUCCESS; ++k)
   {
+    const int x = std::round(c(0));
+    const int y = std::round(c(1));
+
+    if (!(0 <= x && x < width && 0 <= y && y < height) || c(2) < depthThresh)
+    {
+      --k;
+      continue;
+    }
     unprojectEvent<T, NDims>()(camParams, c, ct);
 
     dispersion.run(ct, ts);

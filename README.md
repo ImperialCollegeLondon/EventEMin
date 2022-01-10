@@ -150,6 +150,7 @@ To run the example, on a terminal type:
 To run the sequences test, you need to download at least one sequence of the dataset provided in <http://rpg.ifi.uzh.ch/davis_data.html>.
 
 ### Batch Mode
+#### 2D
 To run the test, on a terminal type:
   ```bash
   ./example_test_sequence <path-to-events-dir> <batch-size> <path-to-estimates-saving-dir> <estimates-file-name>
@@ -172,7 +173,24 @@ For example, if you downloaded the `poster_rotation` sequence and stored it unde
   ```
 a file containig the estimates using the *Approx. Tsallis* measure should be created under the `/foo/poster_rotation/estimates` directory (`/estimates` directory should be created before running the command).
 
+#### 3D
+To run the test, on a terminal type:
+  ```bash
+  ./example_test_sequence_3d <path-to-events-dir> <batch-size> <minimum-depth> <maximum-depth> <path-to-estimates-saving-dir> <estimates-file-name>
+  ```
+The additional executable arguments are as follows:
+
+- minimum-depth:
+Minimum depth of the depth-augmented events.
+- maximum-depth:
+Maximum depth of the depth-augmented events.
+
+The rest of the arguments are the same as previously.
+The events should already be undistorted and augmented with depth.
+See [indoor_flying1](./dataset/indoor_flying1) for an example.
+
 ### Incremental Mode
+#### 2D
 To run the test, on a terminal type:
   ```bash
   ./example_incremental_test_sequence <path-to-events-dir> <number-events> <path-to-estimates-saving-dir> <estimates-file-name>
@@ -194,6 +212,22 @@ For example, if you downloaded the `poster_rotation` sequence and stored it unde
   
   ```
 a file containig the estimates using the *Incremental Potential* measure should be created under the `/foo/poster_rotation/estimates` directory (`/estimates` directory should be created before running the command).
+
+#### 3D
+To run the test, on a terminal type:
+  ```bash
+  ./example_incremental_test_sequence_3d <path-to-events-dir> <number-events> <minimum-depth> <depth-scale> <path-to-estimates-saving-dir> <estimates-file-name>
+  ```
+The additional executable arguments are as follows:
+
+- minimum-depth:
+Minimum depth of the depth-augmented events.
+- depth-scale:
+Depth scaling factor.
+
+The rest of the arguments are the same as previously.
+The events should already be undistorted and augmented with depth.
+See [indoor_flying1](./dataset/indoor_flying1) for an example.
 
 ### Compute Errors
 To compute the errors for rotational motion estimation, run the MATLAB script [sequence_error.m](./dataset/poster_rotation/sequence_error.m).

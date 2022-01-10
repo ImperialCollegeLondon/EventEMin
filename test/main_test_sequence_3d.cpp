@@ -9,11 +9,12 @@ using namespace EventEMin;
 int
 main(int argc, char* argv[])
 {
-  if (argc < 5)
+  if (argc < 7)
   {
     std::cout << "usage: " << argv[0]
               << " [events dir] [number of events] "
-                 "[saving dir] [file name]\n";
+                 "[min depth] [max depth] [saving dir] "
+                 "[file name]\n";
     return -1;
   }
 
@@ -22,19 +23,10 @@ main(int argc, char* argv[])
   /* you can modify the model used by uncommenting the corresponding line */
 
   // model
-  // typedef Affinity<T> Model;
-  // typedef Homography<T> Model;
-  // typedef Isometry<T> Model;
-  typedef Rotation<T> Model;
-  // typedef Similarity<T> Model;
-  // typedef Translation<T> Model;
-  // typedef Translation2D<T> Model;
-  // typedef TranslationNormal<T> Model;
+  typedef SixDOF<T> Model;
+  // typedef Translation3D<T> Model;
 
   constexpr int NDims = Model::NDims, NVars = Model::NVars;
-
-  /* you can modify the dispersion measure used by uncommenting the
-   corresponding line */
 
   // exact measures
   // typedef Potential<Model> Dispersion;
@@ -52,7 +44,7 @@ main(int argc, char* argv[])
   // optimiser
   typedef GSLfdfOptimiser<Dispersion> Optimiser;
 
-  // read distorted events from file
+  // read undistorted depth-augmented events from file
   const std::string fevents(std::string(argv[1]) + "/events.txt");
   std::ifstream fin(fevents.c_str());
   if (!fin.is_open())
@@ -62,8 +54,8 @@ main(int argc, char* argv[])
   }
 
   // write estimates to file
-  const std::string festimates(std::string(argv[3]) + "/" +
-                               std::string(argv[4]) + "_estimates.txt");
+  const std::string festimates(std::string(argv[5]) + "/" +
+                               std::string(argv[6]) + "_estimates.txt");
   std::ofstream fout(festimates.c_str());
   if (!fout.is_open())
   {
@@ -72,21 +64,14 @@ main(int argc, char* argv[])
   }
 
   int width, height;
-  cv::Mat camParamsCV, distCoeffs;
+  Matrix<T, 3, 3> camParams;
   const std::string fcalib(std::string(argv[1]) + "/calib.txt");
-  const IO_STATUS ioStatus =
-      loadCamParams<T>(fcalib, width, height, camParamsCV, distCoeffs);
+  const IO_STATUS ioStatus = loadCamParams<T>(fcalib, width, height, camParams);
   if (ioStatus != IO_SUCCESS)
   {
     ioStatusMessage(ioStatus, fcalib);
     return -1;
   }
-
-  // initialise grid-based undistortion map
-  Matrix<T, 3, 3> camParams;
-  cv::cv2eigen(camParamsCV, camParams);
-  cv::Mat undistortionMap;
-  initUndistort<T>(width, height, camParamsCV, distCoeffs, undistortionMap);
 
   Dispersion dispersion(width);
 
@@ -109,14 +94,13 @@ main(int argc, char* argv[])
   Matrix<T> c;
   Vector<T> ts;
   Vector<int> polarity;
-  while (undistort<T, NDims>(0, width, 0, height, undistortionMap, nEvents, fin,
-                             c, ts, polarity) == IO_SUCCESS)
+  while (loadDepthThresh<T>(nEvents, std::atof(argv[3]), std::atof(argv[4]),
+                            fin, c, ts, polarity) == IO_SUCCESS)
   {
     Matrix<T> ct(NDims, c.cols());
     unprojectEvents<T, NDims>()(camParams, c, ct);
     dispersion.assignPoints(ct, ts, polarity, whiten);
 
-    // optimise
     Optimiser optimiser(
         dispersion,
         Optimiser::OptimiserParams(gsl_multimin_fdfminimizer_conjugate_fr,
