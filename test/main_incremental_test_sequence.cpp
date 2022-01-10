@@ -74,7 +74,7 @@ main(int argc, char* argv[])
   cv::Mat undistortionMap;
   initUndistort<T>(width, height, camParamsCV, distCoeffs, undistortionMap);
 
-  const Vector<T, NDims> scale(camParams.diagonal().template head<NDims>());
+  const Vector<T, NDims> scale(Vector<T, NDims>::Ones());
 
   // tolerance that indicates a minimum has been reached
   const T minStep = T(1.0e-6);

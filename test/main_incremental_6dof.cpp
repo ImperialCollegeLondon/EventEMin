@@ -29,6 +29,8 @@ main(void)
   testIncrementalParams.wSize = 4;
   // number of events to maintain
   testIncrementalParams.nEvents = 15000;
+  // depth scaling factor
+  testIncrementalParams.depthScale = T(100.0);
 
   return testIncrementalExample<Dispersion>(testIncrementalParams);
 }

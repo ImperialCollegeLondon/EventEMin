@@ -128,6 +128,8 @@ class Whitening
   typedef typename Model::Vars Vars;
 
  private:
+  projectEvent<T, Model::NDims> projectEvent_;
+
   Model model_;
 
   Stats<M> istats_;
@@ -136,20 +138,24 @@ class Whitening
   Whitening(void) = default;
 
   void
-  processEvent(const Ref<const Point>& scale, const Ref<const Point>& c,
-               Ref<Point> cs) const
+  processEvent(const Matrix<T, 3, 3>& camParams, const Ref<const Point>& scale,
+               const Ref<const Point>& c, Ref<Point> cs) const
   {
     if constexpr (W)
     {
       Point cw;
       whitenPoints(c - istats_.mean, istats_.w, cw);
-      cs = scale.array() *
-           (istats_.singularValues.array() * cw.array() + istats_.mean.array());
+      projectEvent_(
+          camParams,
+          ((istats_.singularValues.array() * cw.array() + istats_.mean.array())
+               .matrix()),
+          cs);
     }
     else
     {
-      cs = scale.array() * c.array();
+      projectEvent_(camParams, c, cs);
     }
+    cs.array() *= scale.array();
   }
 
   void

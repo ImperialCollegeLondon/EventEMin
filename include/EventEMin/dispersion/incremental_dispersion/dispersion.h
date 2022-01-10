@@ -220,7 +220,7 @@ class Dispersion
     DMatrix dcm, dcml;
     PMatrix per, perl;
     model_(varse.vars, c, tsDiffRef, cm, dcm, cg, per);
-    whitening_.processEvent(scale_, cm, cms);
+    whitening_.processEvent(camParams_, scale_, cm, cms);
 
     varse.val = T(0.0);
     varse.vNum.setZero();
@@ -229,7 +229,7 @@ class Dispersion
     for (int i = 0; i < static_cast<int>(inds.size()); ++i)
     {
       model_(varse.vars, c_[inds[i]], tsDiffRef_[i], cml, dcml, cgl, perl);
-      whitening_.processEvent(scale_, cml, cmsl);
+      whitening_.processEvent(camParams_, scale_, cml, cmsl);
       cmDiff = cms - cmsl;
 
       dispersionImpl_(cmDiff, dcm - dcml, cm - cml - cg + cgl, per - perl,

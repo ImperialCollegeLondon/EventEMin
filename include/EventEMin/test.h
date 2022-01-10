@@ -116,6 +116,9 @@ struct TestIncrementalParams
   int wSize;
   // number of events to maintain
   int nEvents;
+  // depth scaling factor
+  // only used when the number of dimensions is higher than 2
+  float depthScale;
 };
 
 template <typename Dispersion>
@@ -164,11 +167,10 @@ testIncrementalExample(const TestIncrementalParams& testIncrementalParams)
   Matrix<T> ct(NDims, nEvents);
   unprojectEvents<T, NDims>()(camParams, c, ct);
 
-  Vector<T, NDims> scale;
-  scale.template head<NDims>() = camParams.diagonal().template head<NDims>();
-  if (NDims == 3)
+  Vector<T, NDims> scale(Vector<T, NDims>::Ones());
+  if constexpr (NDims == 3)
   {
-    scale(2) = T(100.0);
+    scale(2) = testIncrementalParams.depthScale;
   }
 
   Dispersion dispersion(
