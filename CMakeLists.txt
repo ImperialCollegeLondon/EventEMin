@@ -30,8 +30,8 @@ endif()
 # Dependencies
 
 # OpenMP
-option(USE_OPENMP "If available, use OpenMP for parallelization." ON)
-if(USE_OPENMP)
+option(${LIB_NAME}_USE_OPENMP "If available, use OpenMP for parallelization." ON)
+if(${LIB_NAME}_USE_OPENMP)
   find_package(OpenMP)
 endif()
 
