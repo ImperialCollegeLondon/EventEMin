@@ -32,6 +32,9 @@ or
   ```
   sudo apt install libeigen3-dev
   ```
+This repo was originally developed using Eigen 3.3.7.
+Currently, there are some compilation issues between Eigen 3.4.0 and the AutoDiff module.
+So, you should compile this repo with at most Eigen 3.3.9.
 
 GSL - GNU (only used for the batch mode): <https://www.gnu.org/software/gsl/>
   ```
