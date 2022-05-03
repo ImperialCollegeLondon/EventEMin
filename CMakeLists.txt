@@ -60,8 +60,8 @@ if(${LIB_NAME}_BATCH_MODE)
 
   # interface batch lib
   add_library(${LIB_NAME}_BATCH_LIB INTERFACE)
-  target_include_directories(${LIB_NAME}_BATCH_LIB INTERFACE ${${LIB_NAME}_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIR} ${GSL_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
-  target_link_libraries(${LIB_NAME}_BATCH_LIB INTERFACE ${GSL_LIBRARIES} ${OpenCV_LIBS})
+  target_include_directories(${LIB_NAME}_BATCH_LIB INTERFACE ${${LIB_NAME}_INCLUDE_DIRS}  ${GSL_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
+  target_link_libraries(${LIB_NAME}_BATCH_LIB INTERFACE ${GSL_LIBRARIES} Eigen3::Eigen ${OpenCV_LIBS})
   
   target_compile_definitions(${LIB_NAME} INTERFACE ${LIB_NAME}_BATCH_MODE)
   

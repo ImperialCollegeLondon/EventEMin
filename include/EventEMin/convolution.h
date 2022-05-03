@@ -245,9 +245,9 @@ class Convolution<T, 2, U>
     assert(kernel.rows() <= kdim_[0]);
     assert(kernel.cols() <= kdim_[1]);
 
-    val_.template block(ind[0], ind[1], kernel.rows(), kernel.cols()) *=
+    val_.block(ind[0], ind[1], kernel.rows(), kernel.cols()) *=
         std::exp(-lambda * (ts - ts_(ind[0], ind[1])));
-    val_.template block(ind[0], ind[1], kernel.rows(), kernel.cols()) +=
+    val_.block(ind[0], ind[1], kernel.rows(), kernel.cols()) +=
         val * kernel.reverse();
     ts_(ind[0], ind[1]) = ts;
   }
