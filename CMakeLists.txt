@@ -62,9 +62,9 @@ if(${LIB_NAME}_BATCH_MODE)
   add_library(${LIB_NAME}_BATCH_LIB INTERFACE)
   target_include_directories(${LIB_NAME}_BATCH_LIB INTERFACE ${${LIB_NAME}_INCLUDE_DIRS}  ${GSL_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
   target_link_libraries(${LIB_NAME}_BATCH_LIB INTERFACE ${GSL_LIBRARIES} Eigen3::Eigen ${OpenCV_LIBS})
-  
+
   target_compile_definitions(${LIB_NAME} INTERFACE ${LIB_NAME}_BATCH_MODE)
-  
+
   target_link_libraries(${LIB_NAME} INTERFACE ${LIB_NAME}_BATCH_LIB)
 endif()
 
@@ -73,11 +73,11 @@ option(${LIB_NAME}_INCREMENTAL_MODE "Use incremental mode." OFF)
 if(${LIB_NAME}_INCREMENTAL_MODE)
   # interface incremental lib
   add_library(${LIB_NAME}_INCREMENTAL_LIB INTERFACE)
-  target_include_directories(${LIB_NAME}_INCREMENTAL_LIB INTERFACE ${${LIB_NAME}_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS})
-  target_link_libraries(${LIB_NAME}_INCREMENTAL_LIB INTERFACE ${OpenCV_LIBS})
-  
+  target_include_directories(${LIB_NAME}_INCREMENTAL_LIB INTERFACE ${${LIB_NAME}_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
+  target_link_libraries(${LIB_NAME}_INCREMENTAL_LIB INTERFACE Eigen3::Eigen ${OpenCV_LIBS})
+
   target_compile_definitions(${LIB_NAME} INTERFACE ${LIB_NAME}_INCREMENTAL_MODE)
-  
+
   target_link_libraries(${LIB_NAME} INTERFACE ${LIB_NAME}_INCREMENTAL_LIB)
 endif()
 
